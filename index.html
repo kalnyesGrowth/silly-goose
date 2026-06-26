@@ -407,7 +407,7 @@ footer{padding:60px 0 32px;background:var(--plum);color:rgba(255,255,255,.7)}
 <section class="hero" id="hero">
 <div class="hero-video-container">
   <canvas id="heroCanvas"></canvas>
-  <video id="heroVideo" muted playsinline loop preload="auto" style="display:none"></video>
+  <video id="heroVideo" autoplay muted playsinline loop preload="auto" style="position:absolute;width:1px;height:1px;opacity:0;pointer-events:none"></video>
 </div>
 <div class="hero-overlay"></div>
 <div class="hero-content">
@@ -1108,7 +1108,8 @@ footer{padding:60px 0 32px;background:var(--plum);color:rgba(255,255,255,.7)}
   var video=document.getElementById('heroVideo');
   var ctx=canvas.getContext('2d');
   var animId=null;
-  var videoSrc=window.innerWidth<768?'assets/hero-mobile.mp4':'assets/hero.mp4';
+  var isPortrait=window.innerHeight>window.innerWidth;
+  var videoSrc=(window.innerWidth<768||isPortrait&&window.innerWidth<=1024)?'assets/hero-mobile.mp4':'assets/hero.mp4';
   video.src=videoSrc;
 
   function resizeCanvas(){
@@ -1131,7 +1132,22 @@ footer{padding:60px 0 32px;background:var(--plum);color:rgba(255,255,255,.7)}
     animId=requestAnimationFrame(drawFrame);
   }
   video.addEventListener('play',function(){if(!animId)drawFrame()});
-  video.play().catch(function(){});
+
+  function tryPlay(){
+    var p=video.play();
+    if(p&&p.catch)p.catch(function(){});
+  }
+
+  if(video.readyState>=2){
+    tryPlay();
+  } else {
+    video.addEventListener('canplay',function(){tryPlay()},{once:true});
+    video.load();
+  }
+
+  document.addEventListener('touchstart',function(){
+    if(video.paused)tryPlay();
+  },{once:true,passive:true});
 
   /* Highlight today's hours */
   var days=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
